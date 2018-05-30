@@ -212,7 +212,7 @@ def sign_message(msg: str, block_length: int = 32) -> str:
 
 def algo1_encrypt(u: np.array, G_stroke: np.array, M_first: np.array, t: int) -> np.array:
     v = u @ G_stroke % 2
-    e = np.zeros(M_first.shape[0])
+    e = np.zeros(M_first.shape[0], dtype=int)
     e = random_errors(e, t)
     e_stroke = e @ M_first % 2
     w = (v + e_stroke) % 2
@@ -220,10 +220,32 @@ def algo1_encrypt(u: np.array, G_stroke: np.array, M_first: np.array, t: int) ->
 
 
 def algo1_decrypt(w: np.array, G: np.array, M: np.array, t: int) -> np.array:
-    w_stroke = w @ np.linalg.inv(M) % 2
+    M_invers = inverse_matrix(M)
+    w_stroke = w @ M_invers % 2
+    res = decode_reed_muller(w_stroke)
+    return res
 
-    return w
 
+def test(dim: int):
+    k = dim
+    G = reed_muller_matrix(k)
+    M = np.random.random_integers(0, 1, size=(2 ** k, 2 ** k))
+    while np.around(np.linalg.det(M)) % 2 == 0:
+        M = np.random.random_integers(0, 1, size=(2 ** k, 2 ** k))
+    p = np.random.randint(1, 2**k)
+    M1 = M[:p, :]
+    M2 = M[p:, :]
+    G_stroke = G @ M % 2
+    print('enter msg len {:}'.format(dim))
+    msg = input()
+    binary = to_bits(msg)
+    print("binary msg: ",binary)
+    u = binary[:dim+1]
+    print("u: ",u)
+    encrypted = algo1_encrypt(u, G_stroke, M1, 2**(k-1))
+    print("encrypted: ", encrypted)
+    decrypted = algo1_decrypt(encrypted, G, M, 2**(k-1))
+    print("decrypted: ", decrypted)
 
 # if __name__ == '__main__':
 #     print("input message")
