@@ -194,7 +194,7 @@ def sign_message(msg: str, block_length: int = 32) -> str:
 
 
     # H = hamming_matrix(t);
-    G = reed_muller_matrix(k) # (k+1, 2 ** k)
+    G = reed_muller_matrix(k)  # (k+1, 2 ** k)
 
     # M = np.random.random_integers(0, 1, size=(2 ** k - 1 - k, 2 ** k - 1 - k));
     f = True
@@ -214,37 +214,43 @@ def algo1_encrypt(u: np.array, G_stroke: np.array, M_first: np.array, t: int) ->
     v = u @ G_stroke % 2
     e = np.zeros(M_first.shape[0], dtype=int)
     e = random_errors(e, t)
+    print("e: ", e)
     e_stroke = e @ M_first % 2
+    print("e_stroke: ", e_stroke)
     w = (v + e_stroke) % 2
     return w
 
 
-def algo1_decrypt(w: np.array, G: np.array, M: np.array, t: int) -> np.array:
+def algo1_decrypt(w: np.array, M: np.array) -> np.array:
     M_invers = inverse_matrix(M)
     w_stroke = w @ M_invers % 2
+    print("w_stroke: ", w_stroke)
     res = decode_reed_muller(w_stroke)
     return res
 
 
 def test(dim: int):
+    if dim < 3:
+        print("low dimension")
+        return
     k = dim
     G = reed_muller_matrix(k)
     M = np.random.random_integers(0, 1, size=(2 ** k, 2 ** k))
     while np.around(np.linalg.det(M)) % 2 == 0:
         M = np.random.random_integers(0, 1, size=(2 ** k, 2 ** k))
-    p = np.random.randint(1, 2**k)
+    p = np.random.randint(2**k // 4, 3*2**k // 4)
     M1 = M[:p, :]
     M2 = M[p:, :]
     G_stroke = G @ M % 2
-    print('enter msg len {:}'.format(dim))
-    msg = input()
+    msg = input('enter msg len {:}'.format(dim))
     binary = to_bits(msg)
-    print("binary msg: ",binary)
+    print("binary msg: ", binary)
     u = binary[:dim+1]
-    print("u: ",u)
-    encrypted = algo1_encrypt(u, G_stroke, M1, 2**(k-1))
+    print("u: ", u)
+    t = 2**(k-2) - 1
+    encrypted = algo1_encrypt(u, G_stroke, M1, t)
     print("encrypted: ", encrypted)
-    decrypted = algo1_decrypt(encrypted, G, M, 2**(k-1))
+    decrypted = algo1_decrypt(encrypted, M)
     print("decrypted: ", decrypted)
 
 # if __name__ == '__main__':
